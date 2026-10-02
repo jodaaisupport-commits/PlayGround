@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Crypto Imperium 3D – Vom Keller zum Mond</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪙</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#0a0e1a;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff;touch-action:none;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+#app{position:fixed;inset:0;overflow:hidden}
+#scene{position:absolute;inset:0}
+#scene canvas{display:block;width:100%!important;height:100%!important}
+.hidden{display:none!important}
+/* HUD TOP */
+#hud-top{position:absolute;top:0;left:0;right:0;display:flex;gap:6px;padding:8px;padding-top:max(8px,env(safe-area-inset-top));z-index:20;pointer-events:none}
+.stat{flex:1;background:rgba(10,16,32,.82);border:1px solid rgba(0,255,200,.35);border-radius:12px;padding:6px 8px;text-align:center;backdrop-filter:blur(8px);min-width:0}
+.stat .label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7ef9d2;opacity:.9}
+.stat .value{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#euro-val{color:#ffd75e}#coin-val{color:#00ffc8}#hash-val{color:#7aa2ff}#kurs-val{color:#ff8ad8}
+#level-badge{position:absolute;top:76px;left:8px;z-index:20;background:linear-gradient(135deg,#ff9a00,#ff2e93);border-radius:12px;padding:6px 12px;font-weight:900;font-size:13px;box-shadow:0 4px 18px rgba(255,60,150,.5);pointer-events:auto;border:1px solid #fff3}
+#quest{position:absolute;top:76px;right:8px;left:170px;z-index:19;background:rgba(20,10,40,.85);border:1px solid #a78bfa;border-radius:12px;padding:7px 10px;font-size:12.5px;line-height:1.35;backdrop-filter:blur(6px)}
+#quest b{color:#c4b5fd}
+#chart-mini{position:absolute;top:132px;right:8px;z-index:19;width:150px;height:56px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);border-radius:10px;overflow:hidden}
+#chart-mini canvas{width:100%;height:100%}
+/* CENTER MESSAGE */
+#toast{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) scale(.9);z-index:40;background:rgba(0,0,0,.88);border:1px solid #00ffc8;color:#fff;padding:14px 20px;border-radius:16px;font-size:16px;font-weight:700;text-align:center;opacity:0;pointer-events:none;transition:all .3s;max-width:86vw}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#tap-mine-fx{position:absolute;z-index:30;pointer-events:none;font-weight:900;color:#00ffc8;text-shadow:0 2px 10px #000;animation:floatUp 1s ease-out forwards}
+@keyframes floatUp{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-70px) scale(1.4)}}
+/* BOTTOM UI */
+#hud-bottom{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:8px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;background:linear-gradient(to top,rgba(0,0,0,.75),transparent)}
+#action-row{display:flex;gap:8px;justify-content:center}
+.btn{flex:1;max-width:200px;border:none;border-radius:14px;padding:13px 8px;font-size:14px;font-weight:900;color:#08131a;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.4);transition:transform .08s}
+.btn:active{transform:scale(.96)}
+#btn-mine{background:linear-gradient(180deg,#00ffc8,#00a67e);font-size:16px}
+#btn-sell{background:linear-gradient(180deg,#ffd75e,#e8930c)}
+#btn-shop{background:linear-gradient(180deg,#a78bfa,#6d28d9);color:#fff}
+#btn-next{background:linear-gradient(180deg,#ff8ad8,#db2777);color:#fff}
+#btn-shop2{background:linear-gradient(180deg,#7aa2ff,#1d4ed8);color:#fff}
+/* Joystick */
+#joy-zone{position:absolute;left:12px;bottom:110px;width:130px;height:130px;z-index:25;touch-action:none}
+#joy-base{position:absolute;inset:0;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.3);backdrop-filter:blur(4px)}
+#joy-knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#00ffc8,#028a6b);box-shadow:0 4px 14px rgba(0,255,200,.5)}
+#cam-hint{position:absolute;right:12px;bottom:115px;z-index:24;background:rgba(255,255,255,.1);border:1px solid #ffffff44;color:#fff;border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:24px;touch-action:none}
+#btn-jump{position:absolute;right:86px;bottom:105px;z-index:25;width:58px;height:58px;border-radius:50%;border:2px solid #ffd75e;background:rgba(255,215,94,.2);color:#ffd75e;font-size:26px;font-weight:900}
+/* Modals */
+.modal{position:absolute;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(3px)}
+.modal-card{width:100%;max-width:520px;max-height:82vh;overflow-y:auto;background:#11182e;border:1px solid #00ffc855;border-radius:20px 20px 0 0;padding:16px 16px 30px;animation:slideUp .25s ease-out}
+@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
+.modal-card h2{font-size:20px;margin-bottom:4px}
+.modal-card p.sub{font-size:13px;color:#9fb3c8;margin-bottom:12px}
+.shop-item{display:flex;gap:10px;align-items:center;background:#1a2340;border:1px solid #ffffff22;border-radius:14px;padding:10px;margin-bottom:10px}
+.shop-item .ico{font-size:30px;width:44px;text-align:center}
+.shop-item .info{flex:1}
+.shop-item .info b{font-size:14px}
+.shop-item .info small{color:#9fb3c8;font-size:12px;display:block;line-height:1.3}
+.buy{border:none;border-radius:10px;padding:10px 14px;font-weight:900;background:#00ffc8;color:#06281f;font-size:13px;min-width:86px}
+.buy:disabled{opacity:.35;filter:grayscale(1)}
+.close-row{display:flex;gap:8px;margin-top:6px}
+.close-btn{flex:1;padding:12px;border-radius:12px;border:1px solid #ffffff33;background:#222;color:#fff;font-weight:800;font-size:14px}
+.lvl-card{background:linear-gradient(135deg,#1e1b4b,#4c1d95);border:1px solid #a78bfa;border-radius:14px;padding:12px;margin-bottom:10px}
+.lvl-card.locked{opacity:.55;filter:grayscale(.6)}
+.lvl-card b{font-size:15px}.lvl-card small{color:#c4b5fd}
+/* Start overlay */
+#start-screen{position:absolute;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#1e2a5a 0%,#0a0e1a 70%);padding:18px;overflow-y:auto}
+.start-card{max-width:520px;width:100%;text-align:center;background:rgba(15,22,45,.95);border:1px solid #00ffc866;border-radius:24px;padding:26px 20px;box-shadow:0 20px 80px rgba(0,255,200,.2)}
+.start-card h1{font-size:30px;line-height:1.1;background:linear-gradient(90deg,#00ffc8,#ffd75e,#ff5da2);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900}
+.start-card .story{font-size:14px;color:#cbd5e1;background:#0b1226;border-radius:12px;padding:12px;margin:14px 0;text-align:left;line-height:1.5;border:1px solid #ffffff18}
+.start-card .feat{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+.pill{font-size:11px;background:#ffffff14;border:1px solid #ffffff2a;padding:5px 10px;border-radius:999px}
+#btn-start{width:100%;margin-top:12px;padding:16px;font-size:18px;font-weight:900;border:none;border-radius:16px;background:linear-gradient(90deg,#00ffc8,#4ade80);color:#052e22;box-shadow:0 6px 0 #046c4e}
+#btn-start:active{transform:translateY(3px);box-shadow:none}
+.ctrl-note{font-size:12px;color:#94a3b8;margin-top:10px}
+/* Win */
+#win-screen{position:absolute;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.75);padding:18px}
+.win-card{max-width:440px;background:linear-gradient(180deg,#1a1035,#0b1226);border:2px solid gold;border-radius:24px;padding:26px;text-align:center}
+.win-card h1{color:gold;font-size:28px}
+/* mama event */
+#mama{position:absolute;top:200px;left:50%;transform:translateX(-50%);z-index:45;background:#fef3c7;color:#451a03;border:3px solid #f59e0b;border-radius:16px;padding:12px 14px;max-width:90vw;font-size:14px;font-weight:700;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#mama .row{display:flex;gap:8px;margin-top:10px}
+#mama button{flex:1;padding:10px;border-radius:10px;border:none;font-weight:900}
+@media (min-width:700px){
+  #quest{left:auto;width:360px}
+  #joy-zone{bottom:120px;width:150px;height:150px}
+  .modal{align-items:center}.modal-card{border-radius:20px}
+  #chart-mini{width:220px;height:80px;top:132px}
+}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+</head>
+<body>
+<div id="app">
+  <div id="scene"></div>
+  <div id="hud-top">
+    <div class="stat"><div class="label">💶 Euro</div><div class="value" id="euro-val">20 €</div></div>
+    <div class="stat"><div class="label">🪙 KellerCoin</div><div class="value" id="coin-val">0.00</div></div>
+    <div class="stat"><div class="label">⚡ Hashrate</div><div class="value" id="hash-val">2 H/s</div></div>
+    <div class="stat"><div class="label">📈 Kurs</div><div class="value" id="kurs-val">42 €</div></div>
+  </div>
+  <div id="level-badge">🏠 LVL 1 · Keller</div>
+  <div id="quest">Willkommen! 🎮</div>
+  <div id="chart-mini"><canvas id="chartCanvas" width="220" height="80"></canvas></div>
+  <div id="toast"></div>
+  <div id="joy-zone"><div id="joy-base"></div><div id="joy-knob"></div></div>
+  <div id="cam-hint" title="Kamera drehen">🎥</div>
+  <button id="btn-jump" title="Springen">⤒</button>
+  <div id="hud-bottom">
+    <div id="action-row">
+      <button class="btn" id="btn-mine">⛏️ MINEN</button>
+      <button class="btn" id="btn-sell">💶 VERKAUFEN</button>
+      <button class="btn" id="btn-shop">🛒 SHOP</button>
+      <button class="btn" id="btn-shop2">🏢 IMPERIUM</button>
+    </div>
+  </div>
+
+  <div id="shop-modal" class="modal hidden"><div class="modal-card">
+    <h2>🛒 Mining-Shop</h2><p class="sub">Rüste dein Keller-Setup auf. Jede GPU bringt dich näher zum Imperium!</p>
+    <div id="shop-list"></div>
+    <div class="close-row"><button class="close-btn" data-close="shop-modal">Schließen</button></div>
+  </div></div>
+
+  <div id="empire-modal" class="modal hidden"><div class="modal-card">
+    <h2>🏢 Crypto-Imperium</h2><p class="sub">Schalte neue Standorte frei. Jeder Standort multipliziert dein Einkommen und verändert die 3D-Welt!</p>
+    <div id="empire-list"></div>
+    <div class="close-row"><button class="close-btn" data-close="empire-modal">Schließen</button></div>
+  </div></div>
+
+  <div id="mama" class="hidden">
+    <div id="mama-text">📢 Mama ruft aus dem Erdgeschoss: „Der Strom ist schon wieder so hoch! – 60 € Stromnachzahlung, sofort!"</div>
+    <div class="row"><button id="mama-pay" style="background:#16a34a;color:#fff">Zahlen (60 €)</button><button id="mama-ignore" style="background:#475569;color:#fff">Ignorieren</button></div>
+  </div>
+
+  <div id="win-screen" class="hidden"><div class="win-card">
+    <h1>🚀 DU HAST GEWONNEN!</h1>
+    <p style="margin:12px 0;color:#e2e8f0" id="win-text">Du hast das Mond-Imperium erreicht und bist Krypto-Milliardär!</p>
+    <div style="font-size:50px">🌙💰🪙</div>
+    <button id="btn-continue" class="buy" style="width:100%;margin-top:14px;padding:14px;font-size:16px">Weiter spielen (Endless)</button>
+    <button id="btn-restart" class="close-btn" style="width:100%;margin-top:8px">Neu starten</button>
+  </div></div>
+
+  <div id="start-screen"><div class="start-card">
+    <div style="font-size:44px">🏠⬇️🪙</div>
+    <h1>CRYPTO IMPERIUM 3D</h1>
+    <div style="color:#7ef9d2;font-weight:800;letter-spacing:.1em;font-size:12px">VOM KELLER ZUM MOND 🌙</div>
+    <div class="story">Du bist <b>17</b>, pleite, und wohnst noch bei deinen Eltern. Dein Reich: ein <b>feuchter Kellerraum</b> mit einem alten Laptop.<br><br>Dein Plan: <b>KellerCoins minen → verkaufen → Rigs kaufen → Garage → Büro → Penthouse → FIRMEN-CAMPUS → MOND.</b><br><br>⚠️ Aber pass auf: <b>Stromkosten</b>, <b>Kursschwankungen</b> und deine <b>Mama</b> stehen dir im Weg!</div>
+    <div class="feat"><span class="pill">🕹️ 3D-Keller in Echtzeit</span><span class="pill">📱 Phone & Tablet optimiert</span><span class="pill">⛏️ Tippen zum Minen</span><span class="pill">📈 Live-Kurs</span><span class="pill">🏭 6 Level inkl. Firmen-Campus</span></div>
+    <button id="btn-start">▶ SPIEL STARTEN</button>
+    <div class="ctrl-note">📱 Links: Joystick zum Laufen · Rechts wischen: Kamera · ⛏️-Button: Minen<br>🖥️ Desktop: WASD + Maus + Leertaste</div>
+  </div></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ============ GAME STATE ============
+const LEVELS = [
+  {name:'Keller', icon:'🏠', cost:0, mult:1, wall:0x3a3f4a, floor:0x2a2d36, desc:'Elternhaus-Keller. Es riecht nach Waschmittel.', need:0},
+  {name:'Garage', icon:'🚗', cost:500, mult:2.2, wall:0x4a4238, floor:0x33302a, desc:'Eigene Garage. Mehr Platz für Rigs!', need:500},
+  {name:'Startup-Büro', icon:'🏢', cost:2500, mult:4.5, wall:0x2b3a55, floor:0x1e293b, desc:'Dein erstes Büro in der Stadt.', need:2500},
+  {name:'Penthouse', icon:'🌃', cost:15000, mult:10, wall:0x3d2b55, floor:0x151a2e, desc:'Luxus-Penthouse mit Skyline-Blick.', need:15000},
+  {name:'Firmen-Campus', icon:'🏭', cost:40000, mult:16, wall:0x2e4038, floor:0x1c2b22, desc:'Eigenes Firmen-Gelände! Schaltet Rechenzentrum, Team & Labor frei.', need:40000},
+  {name:'Mondbasis', icon:'🌙', cost:80000, mult:25, wall:0x1c2440, floor:0x0e1428, desc:'Crypto-Mondbasis. Du hast es geschafft!', need:80000},
+];
+const DEFAULT_SAVE = {euros:20, coins:0, gpus:0, rigs:0, cooling:0, solars:0, datacenter:0, staff:0, lab:0, level:0, totalEarned:0, minedTotal:0, clicks:0};
+let S = Object.assign({}, DEFAULT_SAVE, load()||{});
+if(S.level>5) S.level=5;
+if(S.level===4 && S.totalEarned>=80000 && (S.datacenter||0)===0 && (S.staff||0)===0 && (S.lab||0)===0){ S.level=5; } // alte Saves: Mondbasis war Level 5
+let price = 42, priceHist = Array.from({length:40},()=>42);
+let hashrate = 0;
+function load(){ try{ const j = JSON.parse(localStorage.getItem('cryptoImperiumV1')); if(j&&typeof j.euros==='number') return j; }catch(e){} return null; }
+function save(){ try{localStorage.setItem('cryptoImperiumV1',JSON.stringify(S));}catch(e){} }
+function sellMult(){ return 1 + (S.lab||0)*0.06; }
+function calcHash(){ return (2 + S.gpus*5 + S.rigs*25 + S.solars*60 + (S.datacenter||0)*150 + (S.staff||0)*35) * LEVELS[S.level].mult; }
+function powerPerSec(){ const base = 0.02 + S.gpus*0.03 + S.rigs*0.15 + S.solars*0.05 + (S.datacenter||0)*0.8 + (S.staff||0)*0.1; return Math.max(0, base - S.cooling*0.05); }
+function gpuCost(){ return Math.floor(80*Math.pow(1.55,S.gpus)); }
+function rigCost(){ return Math.floor(450*Math.pow(1.8,S.rigs)); }
+function coolCost(){ return Math.floor(150*Math.pow(2.0,S.cooling)); }
+function solarCost(){ return Math.floor(2000*Math.pow(2.2,S.solars)); }
+function dcCost(){ return Math.floor(6000*Math.pow(2.4,(S.datacenter||0))); }
+function staffCost(){ return Math.floor(2500*Math.pow(2.1,(S.staff||0))); }
+function labCost(){ return Math.floor(3500*Math.pow(2.3,(S.lab||0))); }
+
+// ============ AUDIO (tiny bleeps) ============
+let AC=null; function beep(f=600,d=0.08,type='square',v=0.06){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(),g=AC.createGain(); o.type=type;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.stop(AC.currentTime+d);}catch(e){} }
+
+// ============ THREE SCENE ============
+const container = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0e1a);
+scene.fog = new THREE.Fog(0x0a0e1a, 18, 42);
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 100);
+let camYaw = 0, camPitch = 0.5, camDist = 5.2;
+const hemi = new THREE.HemisphereLight(0xbfd9ff, 0x201510, 1.0); scene.add(hemi);
+const amb = new THREE.AmbientLight(0xffffff, 0.35); scene.add(amb);
+const sun = new THREE.DirectionalLight(0xfff2cc, 1.1); sun.position.set(5,9,4); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); scene.add(sun);
+const neon1 = new THREE.PointLight(0x00ffc8, 12, 18); neon1.position.set(-3,3,-2); scene.add(neon1);
+const neon2 = new THREE.PointLight(0xff2e93, 10, 18); neon2.position.set(3,2.5,3); scene.add(neon2);
+
+let world = new THREE.Group(); scene.add(world);
+let rigFans = [], coinMeshes = [], player, playerHead, monitorTex, monitorCanvas, monitorCtx;
+let coins3D = [];
+
+function makeTextSprite(txt){ const c=document.createElement('canvas');c.width=256;c.height=96;const x=c.getContext('2d');x.fillStyle='rgba(0,0,0,0)';x.fillRect(0,0,256,96);x.font='bold 52px sans-serif';x.textAlign='center';x.fillText(txt,128,66);const t=new THREE.CanvasTexture(c);const m=new THREE.SpriteMaterial({map:t,transparent:true});const s=new THREE.Sprite(m);s.scale.set(1.6,0.6,1);return s; }
+
+function buildRoom(lvl){
+  while(world.children.length) world.remove(world.children[0]);
+  rigFans=[]; coinMeshes=[];
+  const L = LEVELS[lvl];
+  const W=12, D=10, H=4;
+  // floor
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(W,0.2,D), new THREE.MeshStandardMaterial({color:L.floor, roughness:.9}));
+  floor.position.y=-0.1; floor.receiveShadow=true; world.add(floor);
+  // grid carpet
+  const grid = new THREE.GridHelper(12, 12, 0x00ffc8, 0x223344); grid.position.y=0.01; grid.material.transparent=true; grid.material.opacity=.25; world.add(grid);
+  // walls
+  const wallMat = new THREE.MeshStandardMaterial({color:L.wall, roughness:.95});
+  const mkWall=(w,h,d,x,y,z,ry=0)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wallMat);m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;world.add(m);return m;};
+  mkWall(W,H,0.3,0,H/2,-D/2); mkWall(W,H,0.3,0,H/2,D/2); mkWall(0.3,H,D,-W/2,H/2,0); mkWall(0.3,H,D,W/2,H/2,0);
+  // ceiling lamp
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.3,16,16), new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xfff2cc, emissiveIntensity:2}));
+  lamp.position.set(0,3.6,0); world.add(lamp);
+  const pl = new THREE.PointLight(0xfff2cc, 8, 20); pl.position.set(0,3.2,0); world.add(pl);
+  // window (except moon = porthole)
+  const isMoon = lvl===5;
+  const winMat = new THREE.MeshStandardMaterial({color: isMoon?0x000000:0x87ceeb, emissive: isMoon?0x000000:0x335577, emissiveIntensity:.6});
+  const win = new THREE.Mesh(new THREE.BoxGeometry(2.4,1.2,0.1), winMat); win.position.set(-2,2.6,-D/2+0.2); world.add(win);
+  if(isMoon){ // stars outside porthole
+    const starGeo=new THREE.BufferGeometry(); const pts=[]; for(let i=0;i<200;i++) pts.push((Math.random()-0.5)*30,Math.random()*15, -12-Math.random()*10);
+    starGeo.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));
+    world.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:0.12})));
+    const earth=new THREE.Mesh(new THREE.SphereGeometry(1.2,24,24),new THREE.MeshStandardMaterial({color:0x3b82f6,emissive:0x1d4ed8,emissiveIntensity:.5}));
+    earth.position.set(4,6,-14); world.add(earth);
+  }
+  // level deco sign
+  const sign = makeTextSprite(L.icon+' '+L.name); sign.position.set(0,3.2,-D/2+0.6); world.add(sign);
+
+  // desk + PC
+  const deskMat=new THREE.MeshStandardMaterial({color:0x6b4a2f,roughness:.7});
+  const desk=new THREE.Mesh(new THREE.BoxGeometry(3,0.12,1.2),deskMat); desk.position.set(-2.5,0.95,-3); desk.castShadow=desk.receiveShadow=true; world.add(desk);
+  for(const [lx,lz] of [[-3.8,-3.4],[-1.2,-3.4],[-3.8,-2.6],[-1.2,-2.6]]){ const leg=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.95,0.12),deskMat); leg.position.set(lx,0.47,lz); world.add(leg); }
+  // monitor with live chart texture
+  monitorCanvas=document.createElement('canvas'); monitorCanvas.width=256; monitorCanvas.height=160; monitorCtx=monitorCanvas.getContext('2d');
+  monitorTex=new THREE.CanvasTexture(monitorCanvas);
+  const mon=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.85,0.08),new THREE.MeshStandardMaterial({color:0x111111})); mon.position.set(-2.5,1.6,-3.2); world.add(mon);
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(1.3,0.75),new THREE.MeshBasicMaterial({map:monitorTex})); scr.position.set(-2.5,1.6,-3.15); world.add(scr);
+  const kb=new THREE.Mesh(new THREE.BoxGeometry(1,0.05,0.35),new THREE.MeshStandardMaterial({color:0x1a1a1a})); kb.position.set(-2.5,1.03,-2.7); world.add(kb);
+  // chair
+  const chair=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.12,16),new THREE.MeshStandardMaterial({color:0x991b1b})); chair.position.set(-2.5,0.6,-1.8); chair.castShadow=true; world.add(chair);
+  const chairLeg=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.55,8),new THREE.MeshStandardMaterial({color:0x333333})); chairLeg.position.set(-2.5,0.28,-1.8); world.add(chairLeg);
+
+  // washing machine (Keller vibe, only lvl 0-1)
+  if(lvl<=1){
+    const wm=new THREE.Mesh(new THREE.BoxGeometry(1,1.1,1),new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.5})); wm.position.set(4.5,0.55,-4); wm.castShadow=true; world.add(wm);
+    const door=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.06,20),new THREE.MeshStandardMaterial({color:0x223344})); door.rotation.x=Math.PI/2; door.position.set(4.5,0.55,-3.48); world.add(door);
+    const boxMat=new THREE.MeshStandardMaterial({color:0x8b5e34,roughness:.9});
+    for(let i=0;i<4;i++){ const b=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.7,0.9),boxMat); b.position.set(-4.5+(i%2)*1.1,0.35+Math.floor(i/2)*0.72,2.8); b.rotation.y=i*0.3; b.castShadow=true; world.add(b); }
+  }
+  // ===== FIRMEN-CAMPUS (lvl 4): eigenes Gelände mit HQ, Rechenzentrum, Bäumen, Brunnen =====
+  if(lvl===4){
+    // Hauptgebäude HQ
+    const hqMat=new THREE.MeshStandardMaterial({color:0xe8edf5,roughness:.5});
+    const hq=new THREE.Mesh(new THREE.BoxGeometry(4.4,2.6,1.6),hqMat); hq.position.set(-1.5,1.3,-3.9); hq.castShadow=true; world.add(hq);
+    const glassMat=new THREE.MeshStandardMaterial({color:0x0ea5e9,emissive:0x0284c7,emissiveIntensity:.9,roughness:.2,metalness:.3});
+    for(let r=0;r<2;r++) for(let c=0;c<5;c++){ const wMesh=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.5,0.06),glassMat); wMesh.position.set(-3.1+c*0.8,1.2+r*0.8,-3.05); world.add(wMesh); }
+    const logo=makeTextSprite('₿ HQ'); logo.position.set(-1.5,3.1,-3.8); world.add(logo);
+    // Rechenzentrum-Hallen (wachsen mit Ausbau)
+    const halls=Math.min(3,(S.datacenter||0)>0?(S.datacenter||0):1);
+    for(let h=0;h<halls;h++){
+      const hx=2.6+h*1.15;
+      const hall=new THREE.Mesh(new THREE.BoxGeometry(1.0,1.5,2.2),new THREE.MeshStandardMaterial({color:0x0f172a,roughness:.4,metalness:.5})); hall.position.set(hx,0.75,-2.6); hall.castShadow=true; world.add(hall);
+      for(let s=0;s<3;s++){ const strip=new THREE.Mesh(new THREE.BoxGeometry(0.06,1.1,0.12),new THREE.MeshBasicMaterial({color:(h+s)%2?0x00ff88:0x00ccff})); strip.position.set(hx-0.53,0.75,-3.3+s*0.7); world.add(strip); }
+      const fan=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,0.06,12),new THREE.MeshStandardMaterial({color:0x00ffc8,emissive:0x00ffc8,emissiveIntensity:1})); fan.rotation.x=Math.PI/2; fan.position.set(hx,1.0,-1.45); world.add(fan); rigFans.push(fan);
+      const lbl=makeTextSprite('🖥️ DC'+(h+1)); lbl.scale.set(1.1,0.42,1); lbl.position.set(hx,1.95,-2.6); world.add(lbl);
+    }
+    // Bäume
+    const trunkMat=new THREE.MeshStandardMaterial({color:0x6b4226,roughness:.9});
+    const crownMat=new THREE.MeshStandardMaterial({color:0x22c55e,roughness:.8});
+    for(const [tx,tz,ts] of [[-4.8,3.2,1],[4.8,3.4,1.2],[-4.9,-0.5,0.9],[0.2,3.6,0.8]]){
+      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.09*ts,0.12*ts,0.7*ts,8),trunkMat); trunk.position.set(tx,0.35*ts,tz); trunk.castShadow=true; world.add(trunk);
+      const crown=new THREE.Mesh(new THREE.SphereGeometry(0.5*ts,12,12),crownMat); crown.position.set(tx,0.95*ts,tz); crown.castShadow=true; world.add(crown);
+    }
+    // Brunnen (neben dem Weg, nicht am Spawn)
+    const basin=new THREE.Mesh(new THREE.CylinderGeometry(0.9,1.0,0.35,16),new THREE.MeshStandardMaterial({color:0x94a3b8,roughness:.6})); basin.position.set(0.9,0.17,2.1); world.add(basin);
+    const water=new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.8,0.08,16),new THREE.MeshStandardMaterial({color:0x38bdf8,emissive:0x0284c7,emissiveIntensity:.7})); water.position.set(0.9,0.36,2.1); world.add(water);
+    const jet=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.12,0.7,8),new THREE.MeshStandardMaterial({color:0xbae6fd})); jet.position.set(0.9,0.7,2.1); world.add(jet);
+    // Solarpark (wächst mit Solars)
+    const panels=Math.min(4,(S.solars||0)>0?(S.solars||0):1);
+    for(let p=0;p<panels;p++){ const pm=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.06,0.7),new THREE.MeshStandardMaterial({color:0x1d4ed8,emissive:0x1e40af,emissiveIntensity:.5,metalness:.6,roughness:.3})); pm.position.set(3.4+p*0.75,0.5,2.9); pm.rotation.x=-0.4; world.add(pm);
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.5,6),new THREE.MeshStandardMaterial({color:0x555555})); pole.position.set(3.4+p*0.75,0.25,2.9); world.add(pole); }
+    // Fahne + Weg + Zaunlampen
+    const poleM=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,2.6,8),new THREE.MeshStandardMaterial({color:0xcccccc,metalness:.7})); poleM.position.set(-4.9,1.3,-3.9); world.add(poleM);
+    const flag=new THREE.Mesh(new THREE.PlaneGeometry(0.9,0.55),new THREE.MeshBasicMaterial({color:0x00ffc8,side:THREE.DoubleSide})); flag.position.set(-4.4,2.25,-3.9); world.add(flag);
+    const path=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.03,8.6),new THREE.MeshStandardMaterial({color:0x9aa3b2,roughness:.9})); path.position.set(-1.2,0.02,0.2); path.receiveShadow=true; world.add(path);
+    for(const [lx,lz] of [[-2.3,3.4],[-0.1,3.4]]){ const lp=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.6,8),new THREE.MeshStandardMaterial({color:0x333333})); lp.position.set(lx,0.8,lz); world.add(lp);
+      const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.12,10,10),new THREE.MeshStandardMaterial({color:0xfff7cc,emissive:0xffd75e,emissiveIntensity:2})); bulb.position.set(lx,1.65,lz); world.add(bulb); }
+    const campSign=makeTextSprite('🏭 Campus'); campSign.position.set(0,3.2,-D/2+0.6); campSign.visible=false; world.add(campSign);
+  }
+  // shelf with rigs
+  const shelfMat=new THREE.MeshStandardMaterial({color:0x222a3a,roughness:.6,metalness:.4});
+  const totalRigs = 1 + S.rigs + Math.min(6, S.gpus>0?1:0) + (lvl>=2?2:0) + (lvl>=3?2:0) + (lvl>=4?2:0);
+  for(let i=0;i<Math.min(10,totalRigs);i++){
+    const col=i%5, row=Math.floor(i/5);
+    const x=1.6+col*0.85, z=1.2-row*1.4;
+    const shelf=new THREE.Mesh(new THREE.BoxGeometry(1,0.08,0.7),shelfMat); shelf.position.set(x,0.7+row*0.9,z); world.add(shelf);
+    const rig=new THREE.Mesh(new THREE.BoxGeometry(0.85,0.45,0.55),new THREE.MeshStandardMaterial({color:0x0f172a,roughness:.4,metalness:.6,emissive:0x00ffc8,emissiveIntensity:.25}));
+    rig.position.set(x,1.0+row*0.9,z); rig.castShadow=true; world.add(rig);
+    for(let f=0;f<2;f++){ const fan=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.04,12),new THREE.MeshStandardMaterial({color:0x00ffc8,emissive:0x00ffc8,emissiveIntensity:1})); fan.rotation.x=Math.PI/2; fan.position.set(x-0.2+f*0.4,1.0+row*0.9,z+0.29); world.add(fan); rigFans.push(fan); }
+    const led=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.04,0.02),new THREE.MeshBasicMaterial({color: i%2?0x00ff88:0xffaa00})); led.position.set(x,0.85+row*0.9,z+0.29); world.add(led);
+  }
+  // penthouse skyline
+  if(lvl===3){ for(let i=0;i<12;i++){ const h=1+Math.random()*3; const b=new THREE.Mesh(new THREE.BoxGeometry(0.8,h,0.8),new THREE.MeshStandardMaterial({color:0x0e1a33,emissive:0xffd75e,emissiveIntensity:.15})); b.position.set(-6+i*1.1, h/2, 7.5); world.add(b);} }
+  // garage door
+  if(lvl===1){ const g=new THREE.Mesh(new THREE.BoxGeometry(3,2.4,0.15),new THREE.MeshStandardMaterial({color:0x777788,metalness:.5,roughness:.5})); g.position.set(2,1.2,-D/2+0.25); world.add(g); }
+  // plants / deco for office+
+  if(lvl>=2){ const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.25,0.4,12),new THREE.MeshStandardMaterial({color:0x92400e})); pot.position.set(-4.8,0.2,3.5); world.add(pot);
+    const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.5,10,10),new THREE.MeshStandardMaterial({color:0x16a34a})); leaf.position.set(-4.8,0.9,3.5); world.add(leaf); }
+
+  // player avatar
+  player=new THREE.Group();
+  const bodyMat=new THREE.MeshStandardMaterial({color:0x00d1a1,roughness:.6});
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.32,0.6,6,14),bodyMat); body.position.y=0.85; body.castShadow=true; player.add(body);
+  playerHead=new THREE.Mesh(new THREE.SphereGeometry(0.26,18,18),new THREE.MeshStandardMaterial({color:0xffd9b3})); playerHead.position.y=1.55; playerHead.castShadow=true; player.add(playerHead);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.14,16),new THREE.MeshStandardMaterial({color:0xff2e93})); cap.position.y=1.72; player.add(cap);
+  player.position.set(-1.2,0,0.8); world.add(player);
+
+  // floating coin spawner visuals
+  for(let i=0;i<8;i++){ const c=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.06,20),new THREE.MeshStandardMaterial({color:0xffd75e,metalness:.9,roughness:.2,emissive:0xaa7700,emissiveIntensity:.5})); c.rotation.x=Math.PI/2; c.visible=false; c.position.set(0,-5,0); world.add(c); coins3D.push({m:c,t:99}); }
+}
+
+buildRoom(S.level);
+
+// ============ CONTROLS (joystick + WASD + camera drag) ============
+const joy={x:0,y:0,active:false,id:null};
+const joyZone=document.getElementById('joy-zone'), knob=document.getElementById('joy-knob');
+function joySet(dx,dy){ const r=42; const len=Math.hypot(dx,dy); if(len>r){dx=dx/len*r;dy=dy/len*r;} knob.style.transform=`translate(${dx}px,${dy}px)`; joy.x=dx/r; joy.y=dy/r; }
+joyZone.addEventListener('touchstart',e=>{e.preventDefault();joy.active=true;joy.id=e.changedTouches[0].identifier;},{passive:false});
+addEventListener('touchmove',e=>{ for(const t of e.changedTouches){ if(joy.active&&t.identifier===joy.id){ const r=joyZone.getBoundingClientRect(); joySet(t.clientX-(r.left+r.width/2), t.clientY-(r.top+r.height/2)); } } },{passive:false});
+addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(t.identifier===joy.id){joy.active=false;joy.id=null;joy.x=0;joy.y=0;knob.style.transform='none';} } });
+joyZone.addEventListener('mousedown',e=>{joy.active=true;joy.id='mouse';const mv=ev=>{const r=joyZone.getBoundingClientRect();joySet(ev.clientX-(r.left+r.width/2),ev.clientY-(r.top+r.height/2));};const up=()=>{joy.active=false;joy.x=joy.y=0;knob.style.transform='none';removeEventListener('mousemove',mv);removeEventListener('mouseup',up);};addEventListener('mousemove',mv);addEventListener('mouseup',up);mv(e);});
+const keys={}; addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true; if(e.code==='Space'){e.preventDefault();doMine();}}); addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+// camera drag (right half)
+let camDrag=null;
+addEventListener('touchstart',e=>{ for(const t of e.changedTouches){ if(t.clientX>innerWidth*0.4 && !joyZone.contains(t.target) && t.target.closest('#hud-bottom,.modal,.btn,#start-screen')==null){ camDrag={id:t.identifier,lx:t.clientX,ly:t.clientY}; } } },{passive:true});
+addEventListener('touchmove',e=>{ if(!camDrag) return; for(const t of e.changedTouches){ if(t.identifier===camDrag.id){ camYaw-=(t.clientX-camDrag.lx)*0.008; camPitch=Math.min(1.2,Math.max(0.1,camPitch+(t.clientY-camDrag.ly)*0.006)); camDrag.lx=t.clientX; camDrag.ly=t.clientY; } } },{passive:true});
+addEventListener('touchend',e=>{ if(camDrag) for(const t of e.changedTouches) if(t.identifier===camDrag.id) camDrag=null; });
+let mouseDrag=false,mx=0,my=0;
+renderer.domElement.addEventListener('mousedown',e=>{mouseDrag=true;mx=e.clientX;my=e.clientY;});
+addEventListener('mousemove',e=>{if(mouseDrag){camYaw-=(e.clientX-mx)*0.006;camPitch=Math.min(1.2,Math.max(0.1,camPitch+(e.clientY-my)*0.005));mx=e.clientX;my=e.clientY;}});
+addEventListener('mouseup',()=>mouseDrag=false);
+addEventListener('wheel',e=>{camDist=Math.min(8,Math.max(3,camDist+e.deltaY*0.005));},{passive:true});
+document.getElementById('btn-jump').addEventListener('click',()=>{vy=4.5;beep(300,0.12,'square');});
+let vy=0, py=0;
+
+// ============ UI LOGIC ============
+const $=id=>document.getElementById(id);
+function toast(msg,ms=2200){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),ms); }
+function fmt(n){ if(n>=1e9) return (n/1e9).toFixed(2)+' Mrd'; if(n>=1e6) return (n/1e6).toFixed(2)+' Mio'; if(n>=1e3) return (n/1e3).toFixed(1)+'k'; return n>=100?Math.floor(n).toString():(Math.round(n*100)/100).toString(); }
+
+function doMine(mult=1){
+  const gain = (0.02 + calcHash()*0.004) * mult;
+  S.coins += gain; S.minedTotal+=gain; S.clicks++;
+  beep(500+Math.random()*500,0.06,'square',0.05);
+  spawnCoinFX(); updateQuest(); updateHUD(); save();
+  if(Math.random()<0.06) toast('⚡ Block gefunden! Bonus!');
+}
+function spawnCoinFX(){
+  const c = coins3D.find(c=>c.t>1.2); if(!c) return;
+  c.t=0; c.m.visible=true;
+  c.m.position.set(player.position.x+(Math.random()-0.5), 1.5, player.position.z+(Math.random()-0.5));
+  const el=document.createElement('div'); el.id='tap-mine-fx'; el.textContent='+'+fmt(0.02+calcHash()*0.004)+' 🪙';
+  el.style.left=(40+Math.random()*20)+'%'; el.style.top='42%'; $('app').appendChild(el); setTimeout(()=>el.remove(),1000);
+}
+function doSell(){
+  if(S.coins<0.01){toast('Nichts zu verkaufen – erst minen! ⛏️');return;}
+  const val=S.coins*price*sellMult(); S.euros+=val; S.totalEarned+=val; S.coins=0;
+  beep(880,0.15,'sine',0.08); toast(`💶 ${fmt(val)} € für Coins erhalten!`); updateQuest(); updateHUD(); save(); checkLevelUp();
+}
+function checkLevelUp(){
+  const next=S.level+1;
+  if(next<LEVELS.length && S.totalEarned>=LEVELS[next].need){ /* auto hint */ toast(`🏢 Neues Level verfügbar: ${LEVELS[next].icon} ${LEVELS[next].name}! → IMPERIUM öffnen`); beep(1000,0.3,'sawtooth',0.07); }
+  if(S.level>=5 && S.totalEarned>=200000 && $('win-screen').classList.contains('hidden')){ $('win-text').textContent=`Du hast ${fmt(S.totalEarned)} € verdient, ${S.minedTotal.toFixed(1)} Coins gemint und ${S.clicks}x geklickt. Mondbasis läuft auf ${calcHash().toFixed(0)} H/s!`; $('win-screen').classList.remove('hidden'); }
+}
+$('btn-mine').addEventListener('click',e=>{doMine();});
+$('btn-mine').addEventListener('touchstart',e=>{e.preventDefault();doMine();},{passive:false});
+$('btn-sell').addEventListener('click',doSell);
+$('btn-shop').addEventListener('click',()=>{renderShop();$('shop-modal').classList.remove('hidden');beep(700,0.07);});
+$('btn-shop2').addEventListener('click',()=>{renderEmpire();$('empire-modal').classList.remove('hidden');beep(700,0.07);});
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>$(b.dataset.close).classList.add('hidden')));
+$('btn-continue').addEventListener('click',()=>$('win-screen').classList.add('hidden'));
+$('btn-restart').addEventListener('click',()=>{localStorage.removeItem('cryptoImperiumV1');location.reload();});
+$('btn-start').addEventListener('click',()=>{ $('start-screen').style.display='none'; try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} beep(660,0.12); setTimeout(()=>beep(880,0.15),130); toast('🏠 Willkommen im Keller! Laufe zum PC und mine!'); });
+
+function renderShop(){
+  const campus = S.level>=4;
+  const items=[
+    {ico:'🎮',name:`GPU (${S.gpus})`,desc:`+5 H/s pro GPU. Strom +0.03€/s`,cost:gpuCost(),can:S.euros>=gpuCost(),buy:()=>{S.euros-=gpuCost();S.gpus++;}},
+    {ico:'🖥️',name:`Mining-Rig (${S.rigs})`,desc:`+25 H/s pro Rig. Erscheint als 3D-Rig im Raum!`,cost:rigCost(),can:S.euros>=rigCost(),buy:()=>{S.euros-=rigCost();S.rigs++;buildRoom(S.level);}},
+    {ico:'❄️',name:`Kühlung (${S.cooling})`,desc:`-0.05 €/s Stromkosten. Mama freut sich.`,cost:coolCost(),can:S.euros>=coolCost(),buy:()=>{S.euros-=coolCost();S.cooling++;}},
+    {ico:'☀️',name:`Solar-Panel (${S.solars})`,desc:`+60 H/s! Nur für Profis.`,cost:solarCost(),can:S.euros>=solarCost()&&S.level>=1,buy:()=>{S.euros-=solarCost();S.solars++;}},
+    {ico:'🏢',name:`Rechenzentrum (${S.datacenter||0})`,desc:campus?`+150 H/s pro Halle! Erscheint als 3D-Halle auf dem Campus. Strom +0.8€/s`:`🔒 Ab Firmen-Campus (Level 5) verfügbar`,cost:dcCost(),can:campus&&S.euros>=dcCost(),buy:()=>{S.euros-=dcCost();S.datacenter=(S.datacenter||0)+1;buildRoom(S.level);}},
+    {ico:'👥',name:`Mining-Team (${S.staff||0})`,desc:campus?`+35 H/s pro Team. Profis, die deine Farm 24/7 betreuen.`:`🔒 Ab Firmen-Campus (Level 5) verfügbar`,cost:staffCost(),can:campus&&S.euros>=staffCost(),buy:()=>{S.euros-=staffCost();S.staff=(S.staff||0)+1;}},
+    {ico:'🔬',name:`Forschungslabor (${S.lab||0})`,desc:campus?`+6% Verkaufspreis pro Labor (aktuell x${sellMult().toFixed(2)}). Bessere Algorithmen!`:`🔒 Ab Firmen-Campus (Level 5) verfügbar`,cost:labCost(),can:campus&&S.euros>=labCost(),buy:()=>{S.euros-=labCost();S.lab=(S.lab||0)+1;}},
+  ];
+  $('shop-list').innerHTML='';
+  if(!campus){ const h=document.createElement('div'); h.className='lvl-card'; h.innerHTML=`<b>🏭 Tipp: Firmen-Campus</b><br><small>Ziehe auf das Firmen-Gelände um (IMPERIUM → Level 5), um <b>Rechenzentrum, Mining-Team & Forschungslabor</b> freizuschalten!</small>`; $('shop-list').appendChild(h); }
+  items.forEach((it,i)=>{ const d=document.createElement('div'); d.className='shop-item'; d.innerHTML=`<div class="ico">${it.ico}</div><div class="info"><b>${it.name}</b><small>${it.desc}</small></div>`; const b=document.createElement('button'); b.className='buy'; b.textContent=fmt(it.cost)+' €'; b.disabled=!it.can; b.onclick=()=>{ if(S.euros>=it.cost){ it.buy(); beep(920,0.12); toast(it.ico+' Gekauft! Hashrate: '+calcHash().toFixed(0)+' H/s'); renderShop(); updateHUD(); save(); updateQuest(); } }; d.appendChild(b); $('shop-list').appendChild(d); });
+}
+function renderEmpire(){
+  $('empire-list').innerHTML='';
+  LEVELS.forEach((L,i)=>{ const owned=i<=S.level; const canBuy=!owned&&i===S.level+1&&S.totalEarned>=L.need; const d=document.createElement('div'); d.className='lvl-card'+(owned?'':' locked');
+    d.innerHTML=`<b>${L.icon} ${i+1}. ${L.name} ${owned?'✅':''}</b><br><small>${L.desc}<br>Einkommen x${L.mult} · Freischaltung ab ${fmt(L.need)} € Gesamtverdienst</small>`;
+    if(!owned){ const b=document.createElement('button'); b.className='buy'; b.style.marginTop='8px'; b.textContent=i===S.level+1?`Umziehen (${fmt(L.need)} € verdient nötig)`:`🔒 erst Level ${i} erreichen`; b.disabled=!canBuy; b.onclick=()=>{ S.level=i; buildRoom(S.level); beep(400,0.2,'sawtooth'); setTimeout(()=>beep(800,0.25,'sawtooth'),180); let msg=`${L.icon} Umzug ins ${L.name}! Einkommen x${L.mult}`; if(i===4) msg=`🏭 Willkommen auf deinem FIRMEN-GELÄNDE! Neue Ausbauten im SHOP: Rechenzentrum, Team & Labor!`; toast(msg,3000); renderEmpire(); updateHUD(); save(); updateQuest(); if(i===5) checkLevelUp(); }; d.appendChild(b); }
+    $('empire-list').appendChild(d); });
+}
+
+// quests
+function questText(){
+  if(S.clicks<5) return `🎯 <b>Quest 1:</b> Laufe mit dem Joystick zum PC und tippe <b>5x MINEN</b> (${S.clicks}/5)`;
+  if(S.minedTotal<1) return `🎯 <b>Quest 2:</b> Mine deine ersten <b>1.0 Coins</b> (${S.minedTotal.toFixed(2)}/1.0)`;
+  if(S.gpus+S.rigs===0) return `🎯 <b>Quest 3:</b> Verkaufe Coins und kaufe deine erste <b>GPU im SHOP</b>`;
+  if(S.level===0) return `🎯 <b>Quest 4:</b> Verdiene insgesamt <b>500 €</b> (${fmt(S.totalEarned)}/500) für die Garage → IMPERIUM`;
+  if(S.level===1) return `🎯 <b>Quest 5:</b> Baue dein Garage-Imperium aus (${fmt(S.totalEarned)}/2500 fürs Büro)`;
+  if(S.level===2) return `🎯 <b>Quest 6:</b> Werde Penthouse-Tycoon (${fmt(S.totalEarned)}/15000)`;
+  if(S.level===3) return `🎯 <b>Quest 7:</b> Kauf dir ein <b>FIRMEN-GELÄNDE</b> 🏭 (${fmt(S.totalEarned)}/40000) → IMPERIUM`;
+  if(S.level===4) return `🎯 <b>Quest 8:</b> Baue <b>Rechenzentrum + Team</b> im SHOP, dann auf zur <b>MONDBASIS</b> (${fmt(S.totalEarned)}/80000) 🌙`;
+  return `🌙 <b>Endless:</b> Baue weiter aus! Verdient: ${fmt(S.totalEarned)} €`;
+}
+function updateQuest(){ $('quest').innerHTML=questText(); }
+function updateHUD(){
+  hashrate=calcHash();
+  $('euro-val').textContent=fmt(S.euros)+' €';
+  $('coin-val').textContent=S.coins.toFixed(2);
+  $('hash-val').textContent=hashrate.toFixed(0)+' H/s';
+  $('kurs-val').textContent=price.toFixed(0)+' €';
+  $('level-badge').textContent=`${LEVELS[S.level].icon} LVL ${S.level+1} · ${LEVELS[S.level].name}`;
+}
+
+// mama event
+let mamaTimer=45;
+function mamaEvent(){
+  if(S.level>=2) return; // Mama nur am Anfang
+  $('mama').classList.remove('hidden');
+  $('mama-text').textContent=`📢 Mama ruft aus dem Erdgeschoss: „Der Strom ist schon wieder so hoch! ${Math.floor(40+S.rigs*20+S.gpus*5)} € Nachzahlung, sofort!"`;
+}
+$('mama-pay').addEventListener('click',()=>{ const f=Math.floor(40+S.rigs*20+S.gpus*5); if(S.euros>=f){S.euros-=f;toast('😇 Mama ist happy. Weiterminen!');}else toast('😱 Kein Geld! Mama zieht den Stecker... (kein Mining 10s)'); $('mama').classList.add('hidden'); mamaTimer=70; updateHUD(); save(); });
+$('mama-ignore').addEventListener('click',()=>{ $('mama').classList.add('hidden'); mamaTimer=50; if(Math.random()<0.5){ S.coins=Math.max(0,S.coins-1); toast('😡 Mama hat den Router neugestartet! -1 Coin'); } else toast('😅 Puh, nochmal Glück gehabt.'); });
+
+// chart
+const chartCtx=$('chartCanvas').getContext('2d');
+function drawChart(){
+  chartCtx.fillStyle='#050810'; chartCtx.fillRect(0,0,220,80);
+  chartCtx.strokeStyle='#00ffc8'; chartCtx.lineWidth=2; chartCtx.beginPath();
+  const mn=Math.min(...priceHist), mx=Math.max(...priceHist), rg=Math.max(1,mx-mn);
+  priceHist.forEach((p,i)=>{ const x=i/(priceHist.length-1)*220, y=70-((p-mn)/rg)*55; i?chartCtx.lineTo(x,y):chartCtx.moveTo(x,y); });
+  chartCtx.stroke();
+  chartCtx.fillStyle='#ff8ad8'; chartCtx.font='bold 11px sans-serif'; chartCtx.fillText(price.toFixed(1)+' €',6,14);
+}
+function drawMonitor(){
+  if(!monitorCtx) return;
+  monitorCtx.fillStyle='#020610'; monitorCtx.fillRect(0,0,256,160);
+  monitorCtx.fillStyle='#00ffc8'; monitorCtx.font='bold 15px monospace'; monitorCtx.fillText('KELLERCOIN '+price.toFixed(1)+'€',10,22);
+  monitorCtx.strokeStyle='#00ffc8'; monitorCtx.lineWidth=2; monitorCtx.beginPath();
+  const mn=Math.min(...priceHist), mx=Math.max(...priceHist), rg=Math.max(1,mx-mn);
+  priceHist.forEach((p,i)=>{ const x=10+i/(priceHist.length-1)*236, y=130-((p-mn)/rg)*80; i?monitorCtx.lineTo(x,y):monitorCtx.moveTo(x,y); });
+  monitorCtx.stroke();
+  if(monitorTex) monitorTex.needsUpdate=true;
+}
+
+// ============ GAME LOOP ============
+const clock=new THREE.Clock();
+let tick=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(0.05,clock.getDelta());
+  // price random walk
+  tick+=dt;
+  if(tick>0.5){ tick=0; price=Math.max(5,price+(Math.random()-0.505)*6); priceHist.push(price); if(priceHist.length>40)priceHist.shift(); drawChart(); drawMonitor(); }
+  // passive mining
+  const gain=calcHash()*0.004*dt;
+  S.coins+=gain; S.minedTotal+=gain*0.2;
+  S.euros-=powerPerSec()*dt;
+  if(S.euros<0&&S.coins>0){ const auto=S.coins*Math.min(1,dt*0.1); S.coins-=auto; S.euros+=auto*price*0.9; } // Notverkauf bei Schulden
+  // movement
+  let mxI=joy.x, mzI=joy.y;
+  if(keys['w']||keys['arrowup'])mzI-=1; if(keys['s']||keys['arrowdown'])mzI+=1;
+  if(keys['a']||keys['arrowleft'])mxI-=1; if(keys['d']||keys['arrowright'])mxI+=1;
+  const sp=4.2*dt;
+  const sin=Math.sin(camYaw), cos=Math.cos(camYaw);
+  let dx=(mxI*cos - mzI*sin)*sp, dz=(-mxI*sin - mzI*cos)*-1*sp;
+  // actually simpler: camera-relative
+  dx=(mxI*cos+ mzI*sin)*sp; dz=(mzI*cos - mxI*sin)*sp;
+  player.position.x=Math.max(-5.2,Math.min(5.2,player.position.x+dx));
+  player.position.z=Math.max(-4.2,Math.min(4.2,player.position.z+dz));
+  // desk collision (rough)
+  if(player.position.x>-4&&player.position.x<-1&&player.position.z>-3.6&&player.position.z<-2){ player.position.z=-2; }
+  // jump physics
+  vy-=12*dt; py+=vy*dt; if(py<0){py=0;vy=0;} player.position.y=py;
+  if(Math.abs(dx)+Math.abs(dz)>0.001){ player.rotation.y=Math.atan2(dx,dz); playerHead.rotation.y=Math.sin(performance.now()*0.005)*0.2; }
+  // camera follow (clamped inside room so walls never block view)
+  let cx=player.position.x+Math.sin(camYaw)*Math.cos(camPitch)*camDist;
+  let cz=player.position.z+Math.cos(camYaw)*Math.cos(camPitch)*camDist;
+  let cy=player.position.y+Math.sin(camPitch)*camDist+1.2;
+  cx=Math.max(-5.4,Math.min(5.4,cx)); cz=Math.max(-4.4,Math.min(4.4,cz)); cy=Math.max(0.6,Math.min(3.7,cy));
+  camera.position.lerp(new THREE.Vector3(cx,cy,cz),0.18);
+  camera.lookAt(player.position.x,1.2,player.position.z);
+  // fans + coins anim
+  const t=performance.now()*0.004;
+  rigFans.forEach((f,i)=>{f.rotation.z+=dt*(5+i%3);});
+  coins3D.forEach(c=>{ if(c.t<1.2){ c.t+=dt; c.m.position.y+=dt*1.5; c.m.rotation.y+=dt*5; if(c.t>=1.2)c.m.visible=false; } });
+  neon1.intensity=10+Math.sin(performance.now()*0.003)*3;
+  // HUD throttle
+  if(!animate._h||performance.now()-animate._h>300){ animate._h=performance.now(); updateHUD(); }
+  // mama countdown
+  mamaTimer-=dt; if(mamaTimer<0){ mamaTimer=9999; mamaEvent(); }
+  renderer.render(scene,camera);
+}
+animate(); updateHUD(); updateQuest(); drawChart();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+setInterval(save,5000);
+// auto-toast hint for desktop testing
+setTimeout(()=>{ if(!$('start-screen').style.display||$('start-screen').style.display!=='none'){ /* wait for start */ } },1000);
+</script>
+</body>
+</html>
