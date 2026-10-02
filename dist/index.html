@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#05070f" />
+<title>Stellar Sandbox 3D – Space Multiplayer</title>
+  <script type="module" crossorigin src="/assets/index-B7s9bjOY.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CfV6gfs8.css">
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<!-- HUD oben -->
+<header id="hud-top">
+  <div class="brand">🚀 STELLAR<span>SANDBOX</span></div>
+  <div class="stats">
+    <div class="pill" id="pill-speed">0 m/s</div>
+    <div class="pill" id="pill-fps">60 FPS</div>
+    <div class="pill online"><span id="dot-net" class="dot"></span><span id="pill-players">1 online</span></div>
+  </div>
+  <button id="btn-menu" aria-label="Menü">☰</button>
+</header>
+
+<!-- Radar -->
+<canvas id="radar" width="140" height="140"></canvas>
+
+<!-- Crosshair -->
+<div id="crosshair">+</div>
+
+<!-- Hitmarker / Toast -->
+<div id="toast"></div>
+
+<!-- Start-Overlay -->
+<div id="start-overlay">
+  <div class="card">
+    <h1>🚀 STELLAR SANDBOX 3D</h1>
+    <p class="sub">Space-Simulation • Sandbox • Multiplayer (P2P)</p>
+    <div class="row">
+      <label>Pilot-Name<input id="inp-name" maxlength="12" placeholder="Nova" /></label>
+      <label>Farbe<input id="inp-color" type="color" value="#33ccff" /></label>
+    </div>
+    <div class="row">
+      <label>Raum-Code<input id="inp-room" maxlength="16" placeholder="z.B. galaxy-1" /></label>
+      <button id="btn-random-room" title="Zufälliger Raum">🎲</button>
+    </div>
+    <button id="btn-start">▶ &nbsp;ABHEBEN</button>
+    <p class="hint">
+      📱 <b>Handy/Tablet:</b> Linker Stick = Schub + Drehen • Rechter Stick = Hoch/Runter + Rollen<br/>
+      🖥️ <b>PC:</b> W/S Schub • A/D Drehen • R/F Hoch/Runter • Q/E Rollen • Shift Boost • Space Laser • Maus ziehen = Kamera
+    </p>
+    <p class="tiny" id="share-hint">Teile den Link mit <code>?room=CODE</code> für Multiplayer im selben Raum.</p>
+  </div>
+</div>
+
+<!-- Seiten-Menü -->
+<aside id="side-menu" class="hidden">
+  <h2>Sandbox 🛠️</h2>
+  <section>
+    <h3>Spawnen</h3>
+    <div class="grid">
+      <button data-spawn="asteroid">☄️ Asteroid</button>
+      <button data-spawn="crystal">💎 Kristall</button>
+      <button data-spawn="station">🛰️ Station</button>
+      <button data-spawn="ring">🪐 Ringwelt</button>
+    </div>
+  </section>
+  <section>
+    <h3>Simulation</h3>
+    <label class="slider">Zeit-Skala <span id="val-time">1.0×</span><input id="rng-time" type="range" min="0" max="3" step="0.1" value="1" /></label>
+    <label class="slider">Gravitation <span id="val-grav">an</span><input id="rng-grav" type="range" min="0" max="2" step="1" value="1" /></label>
+    <div class="grid">
+      <button id="btn-clear">🧹 Clear Deko</button>
+      <button id="btn-reset">🔄 Respawn</button>
+    </div>
+  </section>
+  <section>
+    <h3>Multiplayer</h3>
+    <div class="mp-row"><code id="room-label">raum: -</code><button id="btn-copy">📋 Link</button></div>
+    <ul id="player-list"></ul>
+  </section>
+  <button id="btn-close-menu">✕ Schließen</button>
+</aside>
+
+<!-- Mobile Controls -->
+<div id="touch-ui" class="hidden">
+  <div id="stick-left" class="stick"><div class="nub"></div></div>
+  <div id="stick-right" class="stick"><div class="nub"></div></div>
+  <div id="touch-buttons">
+    <button id="tbtn-boost">⚡<small>BOOST</small></button>
+    <button id="tbtn-fire">🔥<small>LASER</small></button>
+    <button id="tbtn-brake">🛑<small>STOP</small></button>
+  </div>
+</div>
+
+<div id="killfeed"></div>
+
+</body>
+</html>
