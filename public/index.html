@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧟</text></svg>">
+<title>DEADZONE SURVIVE — DayZ-Style Multiplayer</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="game"></div>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div id="stats">
+      <div class="bar"><span>❤️</span><div class="track"><div id="hp" style="width:100%"></div></div></div>
+      <div class="bar"><span>🍖</span><div class="track"><div id="hunger" style="width:100%"></div></div></div>
+      <div class="bar"><span>⚡</span><div class="track"><div id="stamina" style="width:100%"></div></div></div>
+    </div>
+    <div id="info">
+      <div id="clock">☀️ 12:00</div>
+      <div id="online">👥 1</div>
+      <div id="kills">💀 0</div>
+    </div>
+  </div>
+  <canvas id="minimap" width="120" height="120"></canvas>
+  <div id="crosshair">+</div>
+  <div id="toast"></div>
+  <div id="dmg"></div>
+  <div id="lootBtn" class="bigbtn hidden">🎒 LOOT</div>
+  <div id="attackBtn" class="bigbtn">🔪 HIT</div>
+  <button id="sprintBtn">🏃</button>
+  <div id="stick"><div id="knob"></div></div>
+  <div id="killfeed"></div>
+</div>
+
+<!-- Startbildschirm -->
+<div id="menu">
+  <h1>🧟 DEADZONE<br>SURVIVE</h1>
+  <p class="sub">DayZ-Style Multiplayer • 3D • Phone & Tablet</p>
+  <ul class="help">
+    <li>🕹️ Linker Daumen: Laufen (Joystick)</li>
+    <li>👉 Rechter Daumen: Umsehen (Wischen)</li>
+    <li>🔪 HIT: Zombies & Spieler angreifen</li>
+    <li>🎒 LOOT: Kisten plündern (Essen / Medkit / Waffe)</li>
+    <li>🍖 Hunger sinkt — iss, sonst stirbst du!</li>
+  </ul>
+  <input id="name" maxlength="14" placeholder="Dein Name…" value="Survivor">
+  <button id="play">▶ SPIELEN</button>
+  <p class="tiny">Desktop: WASD + Maus + E (Loot) + Leertaste (Hit)</p>
+  <p id="status" class="tiny"></p>
+</div>
+
+<div id="dead" class="hidden">
+  <h2>☠️ DU BIST GESTORBEN</h2>
+  <button id="respawn">↻ RESPAWN</button>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
