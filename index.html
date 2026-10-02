@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050914">
+<title>Stellar Empire — 3D Space Sandbox</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+  <canvas id="minimap" width="180" height="180"></canvas>
+
+  <header id="hud-top">
+    <div class="logo">STELLAR <span>EMPIRE</span> <em>3D Sandbox</em></div>
+    <div class="resources">
+      <div class="res" title="Credits – Währung für Schiffe & Upgrades">◈ <b id="r-credits">0</b><label>Credits</label></div>
+      <div class="res" title="Metall – Baumaterial aus Asteroiden">⬢ <b id="r-metal">0</b><label>Metall</label></div>
+      <div class="res" title="Energie – wird von Solarkraftwerken erzeugt">⚡ <b id="r-energy">0</b><label>Energie</label></div>
+      <div class="res" title="Bevölkerung – wächst auf Kolonien">👥 <b id="r-pop">0</b><label>Bevölk.</label></div>
+      <div class="res" title="Forschung – schaltet Boni frei">🔬 <b id="r-sci">0</b><label>Forsch.</label></div>
+      <div class="res empire" title="Imperiums-Stufe">👑 <b id="r-empire">Stufe 1</b><label id="r-colonies">0 Kolonien</label></div>
+    </div>
+    <div class="top-btns">
+      <button id="btn-help">?</button>
+      <button id="btn-sound">🔊</button>
+      <button id="btn-save">💾</button>
+    </div>
+  </header>
+
+  <aside id="build-menu">
+    <h3>🛠 Werft & Bau <span>[B]</span></h3>
+    <div id="build-list"></div>
+    <h3>🎯 Missionen</h3>
+    <div id="missions"></div>
+    <h3>📡 Empire</h3>
+    <div class="empire-btns">
+      <button id="btn-scan">Scan-Puls (E)</button>
+      <button id="btn-autopilot">Autopilot: AUS</button>
+      <button id="btn-cam">Kamera: Follow</button>
+    </div>
+  </aside>
+
+  <aside id="selection" class="hidden">
+    <button id="sel-close">✕</button>
+    <h3 id="sel-title">Objekt</h3>
+    <p id="sel-desc"></p>
+    <div id="sel-stats"></div>
+    <div id="sel-actions"></div>
+  </aside>
+
+    <!-- Mobile Bottom-Tab-Bar -->
+  <nav id="mobile-tabs" class="hidden">
+    <button id="tab-build">🛠<span>Bau</span></button>
+    <button id="tab-scan">📡<span>Scan</span></button>
+    <button id="tab-cam">🎥<span>Kam</span></button>
+    <button id="tab-close">✕<span>Zu</span></button>
+  </nav>
+  <footer id="hud-bottom">
+    <div id="toast"></div>
+    <div id="controls-hint">
+      <b>W/S</b> Schub · <b>A/D</b> Drehen · <b>Q/R/F</b> Hoch/Runter · <b>Shift</b> Boost · <b>Leertaste / Klick</b> Laser ·
+      <b>1–6</b> Bauen · <b>C</b> Kamera · <b>E</b> Scan · <b>Rechts-Drag</b> Umsehen · <b>Scroll</b> Zoom · <b>B</b> Menü · <b>X</b> Autopilot aus
+    </div>
+    <!-- Mobile Touch-Steuerung -->
+    <div id="touch-ui" class="hidden">
+      <div id="joystick"><div id="stick"></div></div>
+      <div id="touch-btns">
+        <button id="t-fire" class="tbtn big">🔥</button>
+        <button id="t-boost" class="tbtn">⚡</button>
+        <button id="t-up" class="tbtn">▲</button>
+        <button id="t-down" class="tbtn">▼</button>
+      </div>
+      <div id="touch-btns2">
+        <button id="t-menu" class="tbtn small">🛠</button>
+        <button id="t-scan" class="tbtn small">📡</button>
+        <button id="t-cam" class="tbtn small">🎥</button>
+      </div>
+    </div>
+    <div id="ship-status">
+      <div class="bar"><label>Hülle</label><div class="track"><div id="bar-hull"></div></div></div>
+      <div class="bar"><label>Schild</label><div class="track"><div id="bar-shield"></div></div></div>
+      <div id="speed">0 m/s</div>
+    </div>
+  </footer>
+
+  <div id="start-overlay">
+    <div class="panel">
+      <h1>STELLAR <span>EMPIRE</span></h1>
+      <p class="sub">3D Space Sandbox Empire · Desktop & Mobil</p>
+      <ul>
+        <li>🚀 Fliege frei durch ein Sonnensystem mit 5 Planeten & Asteroidengürtel</li>
+        <li>⛏️ Baue Bergbau-Stationen, Kraftwerke, Werften & Kolonien ab</li>
+        <li>👥 Gründe ein Imperium, handle automatisch, forsche & verteidige dich gegen Piraten</li>
+        <li>💾 Sandbox ohne Game Over — Speicherstand bleibt lokal erhalten</li>
+      </ul>
+      <div class="keys">
+        <div><b>W A S D + Q/E</b><span>Fliegen / Höhe (Desktop)</span></div>
+        <div><b>Maus + Klick/Leertaste</b><span>Umsehen / Laser (Desktop)</span></div>
+        <div><b>1–6 / Klick auf Objekt</b><span>Bauen / Verwalten</span></div>
+        <div class="touch-only"><b>🕹 Joystick + 🔥</b><span>Fliegen / Feuern (Mobil)</span></div>
+        <div class="touch-only"><b>👆 Tap / Pinch</b><span>Auswählen / Zoom (Mobil)</span></div>
+        <div class="touch-only"><b>🛠 📡 🎥 Buttons</b><span>Bau / Scan / Kamera (Mobil)</span></div>
+      </div>
+      <button id="btn-start">▶ Imperium starten</button>
+      <button id="btn-continue" class="ghost hidden">Spielstand laden</button>
+      <p class="note">Tipp: Folge dem Tutorial links. Erster Schritt: Asteroiden zerschießen für Metall.</p>
+    </div>
+  </div>
+
+  <div id="help-overlay" class="hidden">
+    <div class="panel">
+      <h2>Hilfe — So spielst du</h2>
+      <ol>
+        <li><b>Fliegen Desktop:</b> W/S Schub, A/D Gieren, Q/R hoch, F runter, Shift = Boost. C wechselt Kamera.</li>
+        <li><b>Fliegen Mobil:</b> Linker 🕹 Joystick = Schub + Drehen, ▲/▼ = Höhe, ⚡ = Boost, 🔥 = Laser halten.</li>
+        <li><b>Abbauen:</b> Fliege in den Asteroidengürtel (orange Markierung) und halte <b>Leertaste / Linksklick</b>. Jeder Brocken gibt +6–12 Metall.</li>
+        <li><b>Bauen (Tasten 1–6):</b> Station wird vor deinem Schiff platziert. Braucht Metall + Energie.</li>
+        <li><b>Kolonisieren:</b> Planet anklicken → „Kolonie gründen“. Kolonien produzieren Credits + Bevölkerung.</li>
+        <li><b>Verteidigen:</b> Rote Piraten greifen Stationen an. Zerstöre sie für Credits + Forschung.</li>
+        <li><b>Scan (E):</b> Zeigt alle Objekte + Reichweite. Autopilot fliegt zum Ziel.</li>
+      </ol>
+      <button id="btn-help-close">Schließen</button>
+    </div>
+  </div>
+
+  <div id="victory" class="hidden"><div class="panel"><h2>👑 Imperium-Rang aufgestiegen!</h2><p id="victory-text"></p><button id="btn-victory-close">Weiter spielen</button></div></div>
+</div>
+<script type="module" src="game.js"></script>
+</body>
+</html>
